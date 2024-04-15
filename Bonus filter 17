@@ -1,0 +1,29 @@
+#include <iostream>
+#include "Image_Class.h"
+
+using namespace std;
+
+int main() {
+    // Request the user to input the image name
+    string image_name;
+    cout << "Please provide the image name:\n";
+    cin >> image_name;
+
+    // Create an Image object using the provided image name
+    Image image(image_name);
+
+    // Loop through to adjust color values for infrared photography effect
+    for (int i = 0; i < image.width; ++i) {
+        for (int j = 0; j < image.height; ++j) {
+            image(i, j, 0) = 255;
+            image(i, j, 1) = 255 - image(i, j, 1);
+            image(i, j, 2) = 255 - image(i, j, 2);
+        }
+    }
+
+    // Save the modified image (infrared photography image)
+    string output_file_name = "infrared_photography_image.jpg";
+    image.saveImage(output_file_name);
+
+    return 0;
+}
