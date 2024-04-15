@@ -1,0 +1,917 @@
+
+
+/*
+ 15  filter
+
+
+Github repo link:
+
+
+\\\AUTHORS:
+عفراء محمد ابوفاطمه s8
+ رنا الطاهر الطيب s8
+ روان حسن s8
+
+
+\\\Emails
+ranaaltageb@gmail.com - afraamoh178@gmail.com -
+Who Did What:
+
+رنا : made filter number 3(invert) & 6(rotate) & 9(frame) & 12(blur) & bonus 17(infrared)
+
+روان : made filter number 2(black and white) & 5(flip) & 8(crop) & 11(resizing) & bonus 15(oldtv effect)
+
+عفراء : made filter number 1(gray scale) & 4(marge) & 7(darken&lighten) & 10(detect edges) & bonus 16(purple effect)
+
+*/
+
+
+#include "Image_Class.h"
+#include <iostream>
+#include <string>
+#include <fstream>
+#include <stdexcept>
+
+using namespace std;
+
+
+// Afraa
+
+void grayScale(){
+    string filename;
+    cout << "Pls enter colored image name to turn to gray scale: ";
+    cin >> filename;
+
+    Image image(filename);
+
+    for (int i = 0; i < image.width; ++i) {
+        for (int j = 0; j < image.height; ++j) {
+            unsigned  int avg = 0;
+
+            for (int k = 0; k < 3; ++k) {
+                avg += image(i, j, k);
+            }
+
+            avg /= 3;
+
+            image(i, j, 0) = avg;
+            image(i, j, 1) = avg;
+            image(i, j, 2) = avg;
+        }
+    }
+
+    cout << "Pls enter image name to store new image\n";
+    cout << "and specify extension .jpg, .bmp, .png, .tga: ";
+
+    cin >> filename;
+    image.saveImage(filename);
+
+}
+
+
+
+
+
+
+
+// rawan
+void blackAndWhite(){
+    string filename;
+    cout << "Please enter the filename of the colored image to convert to black and white: ";
+    cin >> filename;
+
+    Image image(filename);
+
+    for (int i = 0; i < image.width; ++i) {
+        for (int j = 0; j < image.height; ++j) {
+            unsigned int avg = 0;
+
+            for (int k = 0; k < 3; ++k) {
+                avg += image(i, j, k);
+            }
+
+            avg /= 3;
+
+            if (avg > 127) {
+                image(i, j, 0) = 255;
+                image(i, j, 1) = 255;
+                image(i, j, 2) = 255;
+            } else {
+                image(i, j, 0) = 0;
+                image(i, j, 1) = 0;
+                image(i, j, 2) = 0;
+            }
+        }
+    }
+
+    cout << "Please enter the filename to save the new black and white image (with extension .jpg, .bmp, .png, .tga): ";
+    cin >> filename;
+
+    image.saveImage(filename);
+}
+
+
+
+
+
+
+
+
+// rana
+
+
+void Invert (){
+    string filename;
+    cout << "Please enter the filename of the colored image to invert: ";
+    cin >> filename;
+
+    Image image(filename);
+
+    for (int i = 0; i < image.width; ++i) {
+        for (int j = 0; j < image.height; ++j) {
+            for (int k = 0; k < 3; ++k) {
+
+                image(i, j, k) = 255 - image(i, j, k);
+            }
+        }
+    }
+
+    cout << "Please enter the filename to save the new inverted image (with extension .jpg, .bmp, .png, .tga): ";
+    cin >> filename;
+
+
+    image.saveImage(filename);
+}
+
+
+
+
+
+
+
+//Afraa
+
+void resizeImage(Image& image, int width, int height) {
+    Image resizedImage(width, height);
+
+    float scaleX = static_cast<float>(image.width) / width;
+    float scaleY = static_cast<float>(image.height) / height;
+
+    for (int y = 0; y < height; ++y) {
+        for (int x = 0; x < width; ++x) {
+            for (int c = 0; c < image.channels; ++c) {
+
+                int srcX = static_cast<int>(x * scaleX);
+                int srcY = static_cast<int>(y * scaleY);
+
+                resizedImage(x, y, c) = image(srcX, srcY, c);
+            }
+        }
+    }
+
+    image = resizedImage;
+}
+
+void mergeImages(Image& imageOne, Image& imageTwo) {
+
+    int maxWidth = max(imageOne.width, imageTwo.width);
+    int maxHeight = max(imageOne.height, imageTwo.height);
+
+    if (imageOne.width < maxWidth || imageOne.height < maxHeight) {
+        resizeImage(imageOne, maxWidth, maxHeight);
+    }
+    if (imageTwo.width < maxWidth || imageTwo.height < maxHeight) {
+        resizeImage(imageTwo, maxWidth, maxHeight);
+    }
+
+    for (int y = 0; y < maxHeight; ++y) {
+        for (int x = 0; x < maxWidth; ++x) {
+            for (int c = 0; c < imageOne.channels; ++c) {
+
+                float blendedValue = (imageOne(x, y, c) + imageTwo(x, y, c)) / 2.0f;
+                imageOne(x, y, c) = static_cast<unsigned char>(blendedValue);
+            }
+        }
+    }
+}
+
+void Merge() {
+    cout << "Select merge option:" << endl;
+    cout << "1. Resize both images to the largest size and merge." << endl;
+    cout << "2. Merge the common area of the smaller width and the smaller height." << endl;
+
+    int choice;
+    cin >> choice;
+
+    if (choice == 1) {
+        string imageOneFilename;
+        cout << "Enter the filename of the first image: ";
+        cin >> imageOneFilename;
+        Image imageOne(imageOneFilename);
+
+        string imageTwoFilename;
+        cout << "Enter the filename of the second image: ";
+        cin >> imageTwoFilename;
+        Image imageTwo(imageTwoFilename);
+
+        mergeImages(imageOne, imageTwo);
+
+        string filename;
+        cout << "Please enter the name of the file to store the modified image" << endl;
+        cout << "and specify the extension (.jpg, .bmp, .png, .tga): ";
+        cin >> filename;
+        imageOne.saveImage(filename);
+        system(filename.c_str());
+    }
+
+    if (choice == 2) {
+        string imageOneFilename;
+        cout << "Enter the filename of the first image: ";
+        cin >> imageOneFilename;
+        Image imageOne(imageOneFilename);
+
+        string imageTwoFilename;
+        cout << "Enter the filename of the second image: ";
+        cin >> imageTwoFilename;
+        Image imageTwo(imageTwoFilename);
+
+        mergeImages(imageOne, imageTwo);
+
+        string filename;
+        cout << "Please enter the name of the file to store the modified image" << endl;
+        cout << "and specify the extension (.jpg, .bmp, .png, .tga): ";
+        cin >> filename;
+        imageOne.saveImage(filename);
+        system(filename.c_str());
+    }
+}
+
+
+
+
+
+
+
+
+
+// Rawan
+
+int Flip() {
+    string filename;
+    cout << "Please enter the filename of the colored image to flip: ";
+    cin >> filename;
+
+    Image image(filename);
+
+    cout << "Please choose the flip operation:\n";
+    cout << "1. Horizontal Flip\n";
+    cout << "2. Vertical Flip\n";
+    int choice;
+    cin >> choice;
+
+    switch (choice) {
+        case 1:
+            for (int i = 0; i < image.width / 2; ++i) {
+                for (int j = 0; j < image.height; ++j) {
+                    for (int k = 0; k < 3; ++k) {
+                        swap(image(i, j, k), image(image.width - 1 - i, j, k));
+                    }
+                }
+            }
+            break;
+        case 2:
+            for (int i = 0; i < image.width; ++i) {
+                for (int j = 0; j < image.height / 2; ++j) {
+                    for (int k = 0; k < 3; ++k) {
+                        swap(image(i, j, k), image(i, image.height - 1 - j, k));
+                    }
+                }
+            }
+            break;
+        default:
+            cout << "Invalid choice. Exiting.\n";
+            return 1;
+    }
+
+    cout << "Please enter the filename to save the new flipped image (with extension .jpg, .bmp, .png, .tga): ";
+    cin >> filename;
+
+    image.saveImage(filename);
+
+    return 0;
+}
+
+
+
+
+
+
+// Rana
+
+
+
+
+
+
+
+
+
+
+// Afraa
+void darkenImage(Image& image) {
+    for (int x = 0; x < image.width; ++x) {
+        for (int y = 0; y < image.height; ++y) {
+            for (int a = 0; a < 3; ++a) {
+                // Reduce each color channel by 50% (make it darker)
+                image(x, y, a) *= 0.5; // Multiply by 0.5 to reduce brightness by 50%
+            }
+        }
+    }
+}
+
+// Function to lighten the image
+void lightenImage(Image& image) {
+    for (int x = 0; x < image.width; ++x) {
+        for (int y = 0; y < image.height; ++y) {
+            for (int a = 0; a < 3; ++a) {
+                // Increase each color channel by 50% (make it lighter)
+                int newValue = image(x, y, a) * 1.5; // Multiply by 1.5 to increase brightness by 50%
+                if (newValue > 255) // Ensure the value does not exceed 255
+                    newValue = 255;
+                image(x, y, a) = newValue;
+            }
+        }
+    }
+}
+
+
+
+
+
+
+//rawan
+
+
+
+void CropImageFilter(Image& image, int x, int y, int w, int h) {
+
+    if (x < 0 || y < 0 || x + w > image.width || y + h > image.height) {
+        cout << "Invalid dimensions. Please enter dimensions within the original image size." << endl;
+        return;
+    }
+    Image croppedImage(w, h);
+
+    for (int i = 0; i < w; ++i) {
+        for (int j = 0; j < h; ++j) {
+            croppedImage(i, j, 0) = image(i + x, j + y, 0);
+            croppedImage(i, j, 1) = image(i + x, j + y, 1);
+            croppedImage(i, j, 2) = image(i + x, j + y, 2);
+        }
+    }
+
+    image = croppedImage;
+}
+
+
+
+
+
+//Rana
+
+void frame() {
+    int frameWidth = 800;
+    int frameHeight = 600;
+    string outputFilename;
+    char choice;
+
+    cout << "Do you want to create a simple frame? (Y/N) ";
+    cin >> choice;
+
+    if (tolower(choice) == 'y') {
+        cout << "Enter the filename for the frame: ";
+        cin >> outputFilename;
+
+        Image frame(frameWidth, frameHeight);
+        unsigned char black[3] = {0, 0, 0};
+
+        for (int x = 0; x < frameWidth; ++x) {
+            frame(x, 0, 0) = black[0];
+            frame(x, frameHeight - 1, 0) = black[0];
+        }
+        for (int y = 0; y < frameHeight; ++y) {
+            frame(0, y, 0) = black[0];
+            frame(frameWidth - 1, y, 0) = black[0];
+        }
+
+        string jpgFilename = outputFilename.substr(0, outputFilename.find_last_of('.')) + ".jpg";
+        frame.saveImage(jpgFilename);
+
+        cout << "Frame created successfully!" << endl;
+    } else if (tolower(choice) == 'n') {
+        cout << "No frame created." << endl;
+    } else {
+        cout << "Invalid choice." << endl;
+    }
+}
+
+
+
+
+// Afraa
+Image processImage(const string& filename) {
+    Image image(filename);
+
+    for (int i = 0; i < image.width; ++i) {
+        for (int j = 0; j < image.height; ++j) {
+            unsigned int avg = 0;
+
+            for (int k = 0; k < 3; ++k) {
+                avg += image(i, j, k);
+            }
+            avg /= 3;
+
+            image(i, j, 0) = avg;
+            image(i, j, 1) = avg;
+            image(i, j, 2) = avg;
+        }
+    }
+
+    Image edges(image.width, image.height);
+
+    for (int i = 1; i < image.width - 1; ++i) {
+        for (int j = 1; j < image.height - 1; ++j) {
+            int gx = (image(i + 1, j - 1, 0) + 2 * image(i + 1, j, 0) + image(i + 1, j + 1, 0)) -
+                     (image(i - 1, j - 1, 0) + 2 * image(i - 1, j, 0) + image(i - 1, j + 1, 0));
+            int gy = (image(i - 1, j + 1, 0) + 2 * image(i, j + 1, 0) + image(i + 1, j + 1, 0)) -
+                     (image(i - 1, j - 1, 0) + 2 * image(i, j - 1, 0) + image(i + 1, j - 1, 0));
+
+            int magnitude = sqrt(gx * gx + gy * gy);
+
+            magnitude = 255 - magnitude;
+
+            if (magnitude < 100) {
+                magnitude = magnitude / 2;
+            }
+
+            edges(i, j, 0) = magnitude;
+            edges(i, j, 1) = magnitude;
+            edges(i, j, 2) = magnitude;
+        }
+    }
+
+    return edges;
+}
+
+
+
+//rawan
+
+
+
+
+
+
+
+
+// rana
+void boxBlur(Image& img, unsigned int kernelSize) {
+    if (kernelSize == 0) {
+        cerr << "Invalid kernel size. Kernel size must be greater than zero." << endl;
+        return;
+    }
+
+    unsigned int halfKernel = kernelSize / 2;
+
+    Image temp(img.width, img.height);
+
+    for (unsigned int y = 0; y < img.height; ++y) {
+        for (unsigned int x = 0; x < img.width; ++x) {
+            unsigned int sumRed = 0;
+            unsigned int sumGreen = 0;
+            unsigned int sumBlue = 0;
+
+
+            for (unsigned int ky = 0; ky < kernelSize; ++ky) {
+                for (unsigned int kx = 0; kx < kernelSize; ++kx) {
+                    int px = min(max(static_cast<int>(x) + static_cast<int>(kx) - static_cast<int>(halfKernel), 0), static_cast<int>(img.width) - 1);
+                    int py = min(max(static_cast<int>(y) + static_cast<int>(ky) - static_cast<int>(halfKernel), 0), static_cast<int>(img.height) - 1);
+
+                    sumRed += img(px, py, 0);
+                    sumGreen += img(px, py, 1);
+                    sumBlue += img(px, py, 2);
+                }
+            }
+
+            unsigned int avgRed = sumRed / (kernelSize * kernelSize);
+            unsigned int avgGreen = sumGreen / (kernelSize * kernelSize);
+            unsigned int avgBlue = sumBlue / (kernelSize * kernelSize);
+
+            temp(x, y, 0) = avgRed;
+            temp(x, y, 1) = avgGreen;
+            temp(x, y, 2) = avgBlue;
+        }
+    }
+
+    for (unsigned int y = 0; y < img.height; ++y) {
+        for (unsigned int x = 0; x < img.width; ++x) {
+            img(x, y, 0) = temp(x, y, 0);
+            img(x, y, 1) = temp(x, y, 1);
+            img(x, y, 2) = temp(x, y, 2);
+        }
+    }
+}
+
+
+void Mushi(Image& image) {
+    const int noiseRange = 51;
+    const int scanlineIntensity = 0.7;
+
+    for (int i = 0; i < image.width; ++i) {
+        for (int j = 0; j < image.height; ++j) {
+            for (int k = 0; k < 3; ++k) {
+                // Apply noise
+                int noise = rand() % noiseRange - (noiseRange / 2);
+                int newValue = min(255, max(0, image(i, j, k) + noise));
+                image(i, j, k) = newValue;
+
+                if (j % 2 == 0) {
+                    image(i, j, k) *= scanlineIntensity;
+                }
+            }
+        }
+    }
+
+    for (int i = 0; i < image.width; ++i) {
+        for (int j = 0; j < image.height; ++j) {
+            for (int k = 0; k < 3; ++k) {
+                // Apply random color distortion
+                int distortion = rand() % noiseRange - (noiseRange / 2); // Random distortion between -25 and 25
+                int newValue = min(255, max(0, image(i, j, k) + distortion)); // Ensure value is within [0, 255]
+                image(i, j, k) = newValue;
+            }
+        }
+    }
+}
+
+
+void purple(){
+    string image_name;
+    cout << "Enter the name of the image: ";
+    cin >> image_name;
+
+    // Load the image
+    Image image;
+    if (!image.loadNewImage(image_name)) {
+        cerr << "Error: Failed to load image." << endl;
+        return; // Exit the function if loading fails
+    }
+
+    // Loop through each pixel to reduce the green intensity by 30%
+    for (int i = 0; i < image.width; ++i) {
+        for (int j = 0; j < image.height; ++j) {
+            image(i, j, 1) -= static_cast<unsigned char>(image(i, j, 1) * 0.3);
+        }
+    }
+
+    // Prompt the user to name the new image
+    string output_file_name;
+    cout << "Enter the name for the new image: ";
+    cin >> output_file_name;
+
+    // Save the modified image with the user-specified filename
+    if (!image.saveImage(output_file_name)) {
+        cerr << "Error: Failed to save image." << endl;
+        return; // Exit the function if saving fails
+    }
+
+    cout << "The image has been processed and saved as " << output_file_name << endl;
+
+}
+
+
+void CropImageFilter(Image& image, int x, int y, int w, int h);
+
+int main (){
+
+
+    cout << "Filter Options:\n"
+            "1 : Grayscale Conversion\n"
+            "2 : Black and White\n"
+            "3 : Invert Image\n"
+            "4 : Merge Images\n"
+            "5 : Flip Image\n"
+            "6 : Rotate Image\n"
+            "7 : Darken and Lighten Image\n"
+            "8 : Crop Images\n"
+            "9 : Adding a Frame to the Picture\n"
+            "10: Detect Image Edges\n"
+            "11: Resizing Images\n"
+            "12: Blur Images\n ";
+
+
+    int choice ;
+    cin >> choice;
+
+    if (choice == 1){
+        grayScale();
+        cout << "Do you want to try again? (y,n)";
+        char answer;
+        cin >> answer;
+        if (tolower(answer) == 'y'){
+            main();
+        }else if(tolower(answer) == 'n') {
+            cout << "Exting.." << endl;
+        }else{
+            cout << "INVALID" << endl;
+        }
+    }
+
+
+    else if(choice == 2){
+        blackAndWhite();
+        cout << "Do you want to try again? (y,n)";
+        char answer;
+        cin >> answer;
+        if (tolower(answer) == 'y'){
+            main();
+        }else if(tolower(answer) == 'n') {
+            cout << "Exting.." << endl;
+        }else{
+            cout << "INVALID" << endl;
+        }
+    }
+
+
+    else if(choice == 3){
+        Invert();
+        cout << "Do you want to try again? (y,n)";
+        char answer;
+        cin >> answer;
+        if (tolower(answer) == 'y'){
+            main();
+        }else if(tolower(answer) == 'n') {
+            cout << "Exting.." << endl;
+        }else{
+            cout << "INVALID" << endl;
+        }
+    }
+
+
+    else if(choice ==4 ){
+        Merge();
+        cout << "Do you want to try again? (y,n)";
+        char answer;
+        cin >> answer;
+        if (tolower(answer) == 'y'){
+            main();
+        }else if(tolower(answer) == 'n') {
+            cout << "Exting.." << endl;
+        }else{
+            cout << "INVALID" << endl;
+        }
+    }
+
+
+    else if(choice == 5){
+        Flip();
+        cout << "Do you want to try again? (y,n)";
+        char answer;
+        cin >> answer;
+        if (tolower(answer) == 'y'){
+            main();
+        }else if(tolower(answer) == 'n') {
+            cout << "Exting.." << endl;
+        }else{
+            cout << "INVALID" << endl;
+        }
+    }
+
+
+    else if(choice == 6){
+
+
+
+        cout << "Do you want to try again? (y,n)";
+        char answer;
+        cin >> answer;
+        if (tolower(answer) == 'y'){
+            main();
+        }else if(tolower(answer) == 'n') {
+            cout << "Exting.." << endl;
+        }else{
+            cout << "INVALID" << endl;
+        }
+    }
+
+
+    else if(choice == 7){
+        string filename;
+        cout << "Please enter the name of the image file to apply the filter: ";
+        cin >> filename;
+
+        Image image(filename);
+
+        // Ask user for operation choice
+        char choice;
+        cout << "Do you want to darken (1) or lighten (2) the image? ";
+        cin >> choice;
+
+        // Apply the selected operation
+        if (choice == '1'){
+            darkenImage(image);
+        } else if (choice == '2'){
+            lightenImage(image);
+        } else {
+            cout << "Invalid choice!!";
+            return 1;
+        }
+
+        // Save the modified image
+        cout << "Please enter the name of the file to store the modified image\n";
+        cout << "and specify the extension (.jpg, .bmp, .png, .tga): ";
+        cin >> filename;
+        image.saveImage(filename);
+        system(filename.c_str());
+
+        main();
+    }
+
+
+    else if(choice == 8){
+        Image image;
+        int x,  y,  w,  h;
+        CropImageFilter( image,  x,  y,  w,  h) ;
+
+            main();
+        }
+
+
+
+    else if(choice == 9 ){
+        frame();
+        cout << "Do you want to try again? (y,n)";
+        char answer;
+        cin >> answer;
+        if (tolower(answer) == 'y'){
+            main();
+        }else if(tolower(answer) == 'n') {
+            cout << "Exting.." << endl;
+        }else{
+            cout << "INVALID" << endl;
+        }
+    }
+
+
+    else if(choice == 10){
+        string filename;
+        cout << "Please enter the image filename: ";
+        cin >> filename;
+
+        Image processedImage = processImage(filename);
+
+        string outputFilename;
+        cout << "Please enter the filename to save the processed image with detected edges (e.g., output.jpg): ";
+        cin >> outputFilename;
+        processedImage.saveImage(outputFilename);
+
+        cout << "The processed image with detected edges has been saved as " << outputFilename << endl;
+
+
+        cout << "Do you want to try again? (y,n)";
+        char answer;
+        cin >> answer;
+        if (tolower(answer) == 'y'){
+            main();
+        }else if(tolower(answer) == 'n') {
+            cout << "Exting.." << endl;
+        }else{
+            cout << "INVALID" << endl;
+        }
+    }
+
+
+    else if(choice == 11){
+
+
+        cout << "Do you want to try again? (y,n)";
+        char answer;
+        cin >> answer;
+        if (tolower(answer) == 'y'){
+            main();
+        }else if(tolower(answer) == 'n') {
+            cout << "Exting.." << endl;
+        }else{
+            cout << "INVALID" << endl;
+        }
+    }
+
+
+    else if(choice == 12 ){
+        string filename;
+        cout << "Enter the filename of the image you want to blur: ";
+        getline(cin, filename);
+
+        Image img;
+        try {
+            img.loadNewImage(filename);
+        } catch (const std::invalid_argument& e) {
+            cerr << "Error: " << e.what() << endl;
+            return 1;
+        }
+
+        unsigned int kernelSize;
+        cout << "Enter the kernel size (9 or 16): ";
+        cin >> kernelSize;
+
+        if (kernelSize != 9 && kernelSize != 16) {
+            cout << "Invalid kernel size. Please enter either 9 or 16." << endl;
+            return 1;
+        }
+
+        boxBlur(img, kernelSize);
+
+        string outputFilename = "blurred_" + filename;
+        try {
+            if (!img.saveImage(outputFilename)) {
+                cerr << "Error: Failed to save blurred image." << endl;
+                return 1;
+            }
+        } catch (const std::invalid_argument& e) {
+            cerr << "Error: " << e.what() << endl;
+            return 1;
+        }
+
+        cout << "Image blurred and saved successfully as " << outputFilename << endl;
+
+        cout << "Do you want to try again? (y,n)";
+        char answer;
+        cin >> answer;
+        if (tolower(answer) == 'y'){
+            main();
+        }else if(tolower(answer) == 'n') {
+            cout << "Exting.." << endl;
+        }else{
+            cout << "INVALID" << endl;
+        }
+    }
+
+    else if(choice == 13) {
+        string filename;
+        cout << "Please enter the image name to apply old TV effect on: ";
+        cin >> filename;
+
+        Image image(filename);
+
+        Mushi(image);
+
+        string outputFilename = "Mushi" + filename;
+        image.saveImage(outputFilename);
+        cout << "The image with old TV effect applied has been saved as " << outputFilename << endl;
+    }
+    else if (choice == 14){
+        string image_name;
+        cout << "Please provide the image name:\n";
+        cin >> image_name;
+
+        Image image;
+        if (!image.loadNewImage(image_name)) {
+            cerr << "Error: Failed to load image." << endl;
+            return 1;
+        }
+
+        for (int i = 0; i < image.width; ++i) {
+            for (int j = 0; j < image.height; ++j) {
+                image(i, j, 0) = 255;
+                image(i, j, 1) = 255 - image(i, j, 1);
+                image(i, j, 2) = 255 - image(i, j, 2);
+            }
+        }
+
+        char save_choice;
+        cout << "Do you want to save the modified image? (y/n): ";
+        cin >> save_choice;
+
+        if (tolower(save_choice) == 'y') {
+            string output_file_name;
+            cout << "Please enter the filename to save the modified image: ";
+            cin >> output_file_name;
+
+            if (!image.saveImage(output_file_name)) {
+                cerr << "Error: Failed to save image." << endl;
+                return 1;
+            }
+
+            cout << "The infrared photography image has been saved as " << output_file_name << endl;
+        } else {
+            cout << "The modified image has not been saved." << endl;
+        }
+    } else if (choice == 15){
+        purple();
+    }
+    else {
+        cout << "valid choise" << endl <<"exiting.."<<endl;
+    }
+
+
+    return 0;
+}
