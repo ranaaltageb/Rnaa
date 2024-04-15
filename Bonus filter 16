@@ -1,0 +1,28 @@
+#include<iostream>
+#include"Image_Class.h"
+
+using namespace std;
+
+int main()
+{
+
+    string Image_Name;
+    cout <<  "enter the name of image\n";
+    cin >> Image_Name;
+
+    Image image(Image_Name);
+
+    //loop to pass in all width and height and change the value of green by multiple to 0.3 
+    for (int i = 0; i < image.width; ++i)
+    {
+        for (int j = 0; j < image.height; ++j)
+        {
+            image(i, j, 1) -= image(i, j, 1) * 0.3;
+        }
+    }
+
+    string outputFile_name = "purple_image.jpg";
+    image.saveImage(outputFile_name);
+
+    return 0;
+}
