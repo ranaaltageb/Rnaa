@@ -1,0 +1,106 @@
+#include "image_class.h"
+#include <iostream>
+#include <string>
+#include <cmath>
+
+using namespace std;
+
+void boxBlur(Image& img, unsigned int kernelSize) {
+    if (kernelSize == 0) {
+        cerr << "Invalid kernel size. Kernel size must be greater than zero." << endl;
+        return;
+    }
+
+    unsigned int halfKernel = kernelSize / 2;
+
+    // Create a temporary image to store the blurred result
+    Image temp(img.width, img.height);
+
+    for (unsigned int y = 0; y < img.height; ++y) {
+        for (unsigned int x = 0; x < img.width; ++x) {
+            // Initialize sums for each channel
+            unsigned int sumRed = 0;
+            unsigned int sumGreen = 0;
+            unsigned int sumBlue = 0;
+
+            // Iterate over the kernel
+            for (unsigned int ky = 0; ky < kernelSize; ++ky) {
+                for (unsigned int kx = 0; kx < kernelSize; ++kx) {
+                    // Get the pixel value at the current position
+                    int px = min(max(static_cast<int>(x) + static_cast<int>(kx) - static_cast<int>(halfKernel), 0), static_cast<int>(img.width) - 1);
+                    int py = min(max(static_cast<int>(y) + static_cast<int>(ky) - static_cast<int>(halfKernel), 0), static_cast<int>(img.height) - 1);
+                    
+                    // Accumulate the pixel values
+                    sumRed += img(px, py, 0);
+                    sumGreen += img(px, py, 1);
+                    sumBlue += img(px, py, 2);
+                }
+            }
+
+            // Calculate the average for each channel
+            unsigned int avgRed = sumRed / (kernelSize * kernelSize);
+            unsigned int avgGreen = sumGreen / (kernelSize * kernelSize);
+            unsigned int avgBlue = sumBlue / (kernelSize * kernelSize);
+
+            // Set the blurred pixel value in the temporary image
+            temp(x, y, 0) = avgRed;
+            temp(x, y, 1) = avgGreen;
+            temp(x, y, 2) = avgBlue;
+        }
+    }
+
+    // Copy the blurred image from the temporary image to the original image
+    for (unsigned int y = 0; y < img.height; ++y) {
+        for (unsigned int x = 0; x < img.width; ++x) {
+            img(x, y, 0) = temp(x, y, 0);
+            img(x, y, 1) = temp(x, y, 1);
+            img(x, y, 2) = temp(x, y, 2);
+        }
+    }
+}
+
+int main() {
+    // Ask the user for the image filename
+    string filename;
+    cout << "Enter the filename of the image you want to blur: ";
+    getline(cin, filename);
+
+    // Load the image
+    Image img;
+    try {
+        img.loadNewImage(filename);
+    } catch (const std::invalid_argument& e) {
+        cerr << "Error: " << e.what() << endl;
+        return 1;
+    }
+
+    // Ask the user to choose the kernel size
+    unsigned int kernelSize;
+    cout << "Enter the kernel size (9 or 16): ";
+    cin >> kernelSize;
+
+    // Validate the kernel size
+    if (kernelSize != 9 && kernelSize != 16) {
+        cout << "Invalid kernel size. Please enter either 9 or 16." << endl;
+        return 1;
+    }
+
+    // Apply box blur with the chosen kernel size
+    boxBlur(img, kernelSize);
+
+    // Save the blurred image
+    string outputFilename = "blurred_" + filename;
+    try {
+        if (!img.saveImage(outputFilename)) {
+            cerr << "Error: Failed to save blurred image." << endl;
+            return 1;
+        }
+    } catch (const std::invalid_argument& e) {
+        cerr << "Error: " << e.what() << endl;
+        return 1;
+    }
+
+    cout << "Image blurred and saved successfully as " << outputFilename << endl;
+
+    return 0;
+}
